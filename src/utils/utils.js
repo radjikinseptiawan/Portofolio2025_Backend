@@ -105,56 +105,6 @@ const loginData = async (req,res)=>{
     return
 }
 
-
-const addProjects = async (req, res) => {
-  const {
-    title,
-    description,
-    project_url,
-    repo_url,
-    image_url,
-    created_at,
-    tech_stack_ids, // ini array, contoh: [1, 2, 3]
-  } = req.body;
-
-  // 1. Insert project dulu
-  const { data: project, error: projectError } = await supabase
-    .from('projects')
-    .insert([
-      {
-        title,
-        description,
-        project_url,
-        repo_url,
-        image_url,
-        created_at,
-      },
-    ])
-    .select()
-    .single();
-
-  if (projectError) {
-    return res.status(500).json({ error: projectError.message });
-  }
-
-  // 2. Masukkan tech_stack_ids ke tabel pivot
-  const pivotData = tech_stack_ids.map((stackId) => ({
-    project_id: project.id,
-    tech_stack_id: stackId,
-  }));
-
-  const { error: pivotError } = await supabase
-    .from('project_tech_stacks')
-    .insert(pivotData);
-
-  if (pivotError) {
-    return res.status(500).json({ error: pivotError.message });
-  }
-
-  res.json({ message: 'Project and tech stacks added successfully', project });
-};
-
-
 const getProjectsData = async(req,res)=>{
     try{
         const {data, error} = await supabase
@@ -175,4 +125,4 @@ const getProjectsData = async(req,res)=>{
     }
 }
 
-module.exports = {getAData,registerData,loginData,updateBio,addProjects,getProjectsData}
+module.exports = {getAData,registerData,loginData,updateBio,getProjectsData}
