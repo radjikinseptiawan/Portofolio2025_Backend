@@ -111,7 +111,7 @@ const getProjectsData = async(req,res)=>{
         .from("projects")
         .select(`*,
             tech_stack_project(
-                tech_stacks (id,name)
+                tech_stacks (id,name,icon_url)
             )
             `)
 
@@ -125,4 +125,87 @@ const getProjectsData = async(req,res)=>{
     }
 }
 
-module.exports = {getAData,registerData,loginData,updateBio,getProjectsData}
+const addProjectsData = async(req,res)=>{
+    const {title,description,project_url,repo_url,image_url,created_at,tech_stack_ids} = req.body
+    const {data : insertedProject,error : errorProject} = await supabase
+    .from("projects")
+    .insert({title,description,project_url,repo_url,image_url,created_at})
+    .select(`*, tech_stack_project(
+        tech_stacks(
+        id,
+        name,
+        icon_url
+        )
+    )
+        `)
+
+    if(errorProject){
+        return res.status(500).json({message : "Internal server error",error})
+    }
+
+    const projectId = insertedProject[0].id
+    const pivotInsertTechStack = tech_stack_ids.map((tech_stack_id)=>({
+        project_id : projectId,
+        tech_stack_id
+    }))
+
+    const {error : pivotError} = await supabase
+    .from("tech_stack_project")
+    .insert(pivotInsertTechStack)
+
+    if(pivotError){
+        return res.status(500).json({message : "Internal server is error!",pivotError})
+    }
+
+    const {data : fullProject, error : fetchError} = await supabase
+    .from("projects")
+    .select(`*, tech_stack_project(
+        tech_stacks(
+        id,
+        name
+        )
+    )`)
+    .eq("id",projectId)
+    .single()
+
+    if(fetchError){
+        return res.status(500).json({message : "Gagal ambil data lengkap",error:fetchError})
+    }
+
+    return res.status(200).json({message : "Success added project",fullProject})
+}
+
+const dropProjectData = async(req,res)=>{
+    const id = req.params.id
+
+    const {data : existingProject ,error : checkError} = await supabase
+    .from("projects")
+    .select("id")
+    .eq(`id`,id)
+    .single()
+
+    if(checkError || !existingProject){
+        return res.json({message : 'id not found!'})
+    }
+
+    const {error : deleteError} = await supabase
+    .from("projects")
+    .delete()
+    .eq('id',id)
+
+    if(deleteError){
+        return res.status(500).json({message : "Failed to delete project",error : deleteError})
+    }
+    return res.status(200).json({ message : `Project with ID ${id} successfully deleted.` });
+}
+
+
+module.exports = {
+    dropProjectData,
+    addProjectsData,
+    getAData,
+    registerData,
+    loginData,
+    updateBio,
+    getProjectsData
+}
