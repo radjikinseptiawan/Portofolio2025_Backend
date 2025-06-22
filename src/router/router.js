@@ -14,7 +14,7 @@ router.post("/bio",verifySupabaseToken,updateBio)
 
 router.get("/projects",getProjectsData)
 
-router.post("/projects",verifySupabaseToken,addProjectsData)
+router.post("/projects",addProjectsData)
 
 router.delete("/projects/:id",verifySupabaseToken,dropProjectData)
 module.exports = router

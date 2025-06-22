@@ -1,3 +1,4 @@
+const supabase = require("../lib/db/db")
 const verifySupabaseToken = async (req, res, next) => {
   const authHeader = req.headers.authorization;
   const token = authHeader?.split(" ")[1];

@@ -1,4 +1,4 @@
-const { supabase } = require("../lib/db/db");
+const  supabase  = require("../lib/db/db");
 const {cloudMediaService} = require("../lib/media/cl")
 
 
