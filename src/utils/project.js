@@ -1,21 +1,4 @@
 const  supabase  = require("../lib/db/db");
-const {cloudMediaService} = require("../lib/media/cl")
-
-
-const getAData = async (req,res)=>{
-    const {data,error} = await supabase
-    .from("user")
-    .select(`*, social_media(*)`)
-
-
-    if(error){
-        res.json({message : "Failed to fetching data. Try again!"})
-        res.status(400)
-        return
-    }
-
-    return res.json({message : "Success fetching data",data})
-}
 
 
 const updateBio = async(req,res)=>{
@@ -42,69 +25,6 @@ const updateBio = async(req,res)=>{
 }
 
 
-
-const registerData = async (req,res)=>{ 
-    const {phone,username,password,email} = req.body;
-    if(!username|| !password || !email ){
-        res.status(400)
-        res.json({
-            message : "bad request"
-        })
-        return
-    }
-
-    const {data,error} = await supabase.auth.signUp({
-        password,
-        options : {
-            data : {
-                username,
-                phone,
-                role : "admin"
-            }
-        },
-        email
-    })
-
-
-    if(error){
-        res.status(404).json({message : "Login failed please try again!",error})
-    }
-
-    return res.json({
-        message : "Berhail daftar",
-        data
-    })
-}
-
-const loginData = async (req,res)=>{
-    const {email,password} = req.body;
-    if(!email|| !password){
-    res.status(400)
-    return res.json({message : "Gagal masuk"})    
-    }
-
-    const {data,error} = await supabase.auth.signInWithPassword({
-        email : email,
-        password : password
-    })
-
-    if(error){
-       return res.status(404).json({message : "Login failed please try again!",error})
-    }
-    res.status(200)
-    
-     const token = data?.session?.access_token;
-
-    res.json({
-    message : "Berhasil masuk",
-    token,
-    user: data.user
-    })
-
-
-    return
-}
-
 const getProjectsData = async(req,res)=>{
     try{
         const {data, error} = await supabase
@@ -126,7 +46,8 @@ const getProjectsData = async(req,res)=>{
 }
 
 const addProjectsData = async(req,res)=>{
-    const {title,description,project_url,repo_url,image_url,created_at,tech_stack_ids} = req.body
+    try{
+    const {title,description,project_url,repo_url,image_url,created_at = new Date(),tech_stack_ids} = req.body
     const {data : insertedProject,error : errorProject} = await supabase
     .from("projects")
     .insert({title,description,project_url,repo_url,image_url,created_at})
@@ -140,7 +61,7 @@ const addProjectsData = async(req,res)=>{
         `)
 
     if(errorProject){
-        return res.status(500).json({message : "Internal server error",error})
+        return res.status(500).json({message : "Internal server error",error :errorProject})
     }
 
     const projectId = insertedProject[0].id
@@ -173,10 +94,13 @@ const addProjectsData = async(req,res)=>{
     }
 
     return res.status(200).json({message : "Success added project",fullProject})
+}catch(error){
+    return res.status(500).json({message : 'error',error : error})
+}
 }
 
 const dropProjectData = async(req,res)=>{
-    const id = req.params.id
+    const id = Number(req.params.id)
 
     const {data : existingProject ,error : checkError} = await supabase
     .from("projects")
@@ -199,13 +123,28 @@ const dropProjectData = async(req,res)=>{
     return res.status(200).json({ message : `Project with ID ${id} successfully deleted.` });
 }
 
+const getProjectStack = async(req,res)=>{
+    try{
+        const {data,error} =await supabase
+        .from("tech_stacks")
+        .select("*")
+        
+        if(error){
+        return res.status(500).json({message : "Data invald",error})
+        }
+
+        return res.status(200).json({message : "success",data})
+    }catch(error){
+        return res.status(500).json({message : "error!",error})
+
+    }
+}
+
 
 module.exports = {
     dropProjectData,
     addProjectsData,
-    getAData,
-    registerData,
-    loginData,
     updateBio,
-    getProjectsData
+    getProjectsData,
+    getProjectStack
 }
